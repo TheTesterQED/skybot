@@ -5,13 +5,19 @@ Since December 1, 2011, the Google Translate API is a paid service only.
 
 import htmlentitydefs
 import re
+from datetime import datetime
 
 from util import hook, http
 
-api_key = ""
+from util.microsofttranslator import Translator, TranslateApiException
+
+client_id = None
+client_secret = None
+access_token_time = None
+translator = None
 
 ########### from http://effbot.org/zone/re-sub.htm#unescape-html #############
-
+'''
 
 def unescape(text):
     def fixup(m):
@@ -37,8 +43,7 @@ def unescape(text):
 
 ##############################################################################
 
-
-def goog_trans(text, slang, tlang):
+def bing_trans(text, slang, tlang):
     url = 'https://www.googleapis.com/language/translate/v2'
     parsed = http.get_json(
         url, key=api_key, q=text, source=slang, target=tlang)
@@ -62,90 +67,51 @@ def match_language(fragment):
             return short.split()[0]
 
     return None
-
+'''
 
 @hook.command
 def translate(inp, bot=None):
     '.translate [source language [target language]] <sentence> -- translates' \
         ' <sentence> from source language (default autodetect) to target' \
-        ' language (default English) using Google Translate'
+        ' language (default English) using Bing Translate' \
+        ' Blah blah Im lazy just does autodetect to English right now'
 
-    if not hasapikey(bot):
-        return None
+    # get secrets
+    if not client_id or not client_secret:
+	if not get_key(bot):
+	    return
 
-    args = inp.split(' ', 2)
+    # should refresh access token now and then
+    if not access_token_time or (datetime.now() - access_token_time).seconds > 500:
+        translator = Translator(client_id, client_secret)
+    
+    #args = inp.split(' ', 2)
 
     try:
-        if len(args) >= 2:
-            sl = match_language(args[0])
-            if not sl:
-                return goog_trans(inp, '', 'en')
-            if len(args) == 2:
-                return goog_trans(args[1], sl, 'en')
-            if len(args) >= 3:
-                tl = match_language(args[1])
-                if not tl:
-                    if sl == 'en':
-                        return 'unable to determine desired target language'
-                    return goog_trans(args[1] + ' ' + args[2], sl, 'en')
-                return goog_trans(args[2], sl, tl)
-        return goog_trans(inp, '', 'en')
+        #if len(args) >= 2:
+        #    if len(args) == 2:
+        #        return translator.translate(args[1], from_lang=args[0], 'en')
+        #    if len(args) >= 3:
+        #        return bing_trans(args[2] ' ' + args[2], sl, 'en')
+                #return bing_trans(args[2], sl, tl)
+        # 1 thing
+        return translator.translate(inp, 'en')
     except IOError, e:
         return e
 
+    
+def get_key(bot):
+    global client_id
+    global client_secret
+    client_id = bot.config.get("api_keys", {}).get("bing_translate_client_id", None)
+    client_secret = bot.config.get("api_keys", {}).get("bing_translate_client_secret", None)
+    return client_secret
 
-languages = 'ja fr de ko ru zh'.split()
+languages = []
+
+'''languages = 'ja fr de ko ru zh'.split()
 language_pairs = zip(languages[:-1], languages[1:])
 
-
-def babel_gen(inp):
-    for language in languages:
-        inp = inp.encode('utf8')
-        trans = goog_trans(inp, 'en', language).encode('utf8')
-        inp = goog_trans(trans, language, 'en')
-        yield language, trans, inp
-
-
-@hook.command
-def babel(inp, bot=None):
-    ".babel <sentence> -- translates <sentence> through multiple languages"
-
-    if not hasapikey(bot):
-        return None
-
-    try:
-        return list(babel_gen(inp))[-1][2]
-    except IOError, e:
-        return e
-
-
-@hook.command
-def babelext(inp, bot=None):
-    ".babelext <sentence> -- like .babel, but with more detailed output"
-
-    if not hasapikey(bot):
-        return None
-
-    try:
-        babels = list(babel_gen(inp))
-    except IOError, e:
-        return e
-
-    out = u''
-    for lang, trans, text in babels:
-        out += '%s:"%s", ' % (lang, text.decode('utf8'))
-
-    out += 'en:"' + babels[-1][2].decode('utf8') + '"'
-
-    if len(out) > 300:
-        out = out[:150] + ' ... ' + out[-150:]
-
-    return out
-
-
-def hasapikey(bot):
-    api_key = bot.config.get("api_keys", {}).get("googletranslate", None)
-    return api_key
 
 lang_pairs = [
     ("no", "Norwegian"),
@@ -209,3 +175,4 @@ lang_pairs = [
     ("cy", "Welsh"),
     ("yi", "Yiddish")
 ]
+'''
