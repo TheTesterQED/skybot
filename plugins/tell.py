@@ -90,9 +90,16 @@ def tell(inp, nick='', chan='', db=None):
 
     db_init(db)
 
-    if db.execute("select count() from tell where user_to=?",
-                  (user_to,)).fetchone()[0] >= 5:
-        return "That person has too many things queued."
+
+    queued_tells = db.execute("select count() from tell where user_to=?",
+                  (user_to,)).fetchone()[0]
+    
+    if queued_tells < 5:
+        return_line = "I'll pass that along~ " + str(queued_tells) + " messages pending for them!"
+    if queued_tells >= 5:
+        return_line = "I'll pass that along, but they already have " + str(queued_tells) + " messages pending for them. You in l-love or something, b-baka?"
+    if queued_tells >= 15:
+        return "That person has too many things queued, go away!"
 
     try:
         db.execute("insert into tell(user_to, user_from, message, chan,"
@@ -102,4 +109,4 @@ def tell(inp, nick='', chan='', db=None):
     except db.IntegrityError:
         return "Message has already been queued."
 
-    return "I'll pass that along."
+    return return_line

@@ -57,7 +57,7 @@ def format_reply(history):
     else:
         last = "last linked by %s %s ago" % (last_nick, last_time)
 
-    return "that url has been posted %s in the past %s by %s (%s)." % (ordinal,
+    return "that url has been posted %s in the past %s by %s (%s). You b-baka." % (ordinal,
                                                                        hour_span, nicklist(history), last)
 
 
